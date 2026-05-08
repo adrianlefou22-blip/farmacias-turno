@@ -144,8 +144,12 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    const https = require('https');
+    const agent = new https.Agent({ rejectUnauthorized: false });
+
     console.log('Descargando web del municipio...');
     const response = await fetch('https://www.malvinasargentinas.gob.ar/farmaciasturno', {
+      agent,
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; FarmaciasBot/1.0)',
         'Accept': 'text/html,application/xhtml+xml',
