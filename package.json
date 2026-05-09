@@ -1,8 +1,6 @@
 {
   "name": "farmacias-turno",
   "version": "1.0.0",
-  "description": "Farmacias de turno - Malvinas Argentinas",
-  "private": true,
   "dependencies": {
     "node-fetch": "^2.7.0"
   }
