@@ -1,6 +1,3 @@
-// netlify/functions/data.js
-// Endpoint público — devuelve los datos guardados en KV
-
 const fetch = require('node-fetch');
 
 exports.handler = async function(event) {
@@ -17,15 +14,18 @@ exports.handler = async function(event) {
     const kvToken = process.env.KV_REST_API_TOKEN;
     if (!kvUrl || !kvToken) return { statusCode: 500, headers, body: JSON.stringify({ error: 'KV no configurado' }) };
 
+    // Upstash Redis REST API — GET key
     const kvRes = await fetch(`${kvUrl}/get/farmacias_data`, {
+      method: 'GET',
       headers: { 'Authorization': `Bearer ${kvToken}` }
     });
 
     if (!kvRes.ok) return { statusCode: 500, headers, body: JSON.stringify({ error: 'Error leyendo KV' }) };
 
     const json = await kvRes.json();
-    if (!json.result) return { statusCode: 404, headers, body: JSON.stringify({ error: 'Sin datos aún' }) };
+    if (!json.result) return { statusCode: 404, headers, body: JSON.stringify({ error: 'Sin datos aun' }) };
 
+    // El resultado viene como string, lo devolvemos directo
     return { statusCode: 200, headers, body: json.result };
 
   } catch (err) {
