@@ -4,14 +4,14 @@ const FARMACIAS_BASE = {
   tortuguitas: {
     'Tortuguitas': [
       { name:'Wassermann', address:'Directorio 507',       tel:'02320491321', shift:'A' },
-      { name:'Riccardi',   address:'Francisco Seguí 4073', tel:'02320492158', shift:'B' }
+      { name:'Riccardi',   address:'Francisco Segui 4073', tel:'02320492158', shift:'B' }
     ]
   },
   polvorines: {
     'Los Polvorines': [
       { name:'Dietrich',       address:'Ruta 8 y 197',             tel:'02320423259', shift:'A' },
       { name:'Rivadavia 2690', address:'Rivadavia 2681',           tel:'46638292',    shift:'B' },
-      { name:'Ocampo',         address:'Pdte. Perón 3387',         tel:'46604575',    shift:'C' },
+      { name:'Ocampo',         address:'Pdte. Peron 3387',         tel:'46604575',    shift:'C' },
       { name:'J.R.',           address:'Arturo Illia 5254',        tel:'44516500',    shift:'C' },
       { name:'Emeric SCS',     address:'Baroni 1859',              tel:'46636212',    shift:'D' },
       { name:'Del Circulo',    address:'Pdte. Peron y Wilson',     tel:'46605111',    shift:'E' },
@@ -80,28 +80,36 @@ exports.handler = async function(event) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Faltan datos' }) };
     }
 
-    const payload = {
+    const payload = JSON.stringify({
       month: month - 1,
       year,
       updatedAt: new Date().toISOString(),
       source: 'admin',
       calendars,
       localities: FARMACIAS_BASE
-    };
+    });
 
     const kvUrl   = process.env.KV_REST_API_URL;
     const kvToken = process.env.KV_REST_API_TOKEN;
     if (!kvUrl || !kvToken) throw new Error('KV no configurado');
 
-    const kvRes = await fetch(`${kvUrl}/set/farmacias_data`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${kvToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ value: JSON.stringify(payload) })
+    // Upstash Redis REST API — SET key value
+    const encoded = encodeURIComponent(payload);
+    const kvRes = await fetch(`${kvUrl}/set/farmacias_data/${encoded}`, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${kvToken}` }
     });
 
-    if (!kvRes.ok) throw new Error('Error guardando en KV');
+    if (!kvRes.ok) {
+      const errText = await kvRes.text();
+      throw new Error(`KV error: ${errText}`);
+    }
 
-    return { statusCode: 200, headers, body: JSON.stringify({ ok: true, month, year, updatedAt: payload.updatedAt }) };
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ ok: true, month, year, updatedAt: new Date().toISOString() })
+    };
 
   } catch (err) {
     return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
